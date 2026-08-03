@@ -103,12 +103,6 @@ const searchQuery = ref("");
 const queryTimeout = ref(null);
 const mapboxSearchResults = ref(null);
 const searchError = ref(false);
-
-/* -------------------------
-   MAPBOX API KEY
-------------------------- */
-
-const mapboxAPIKey = import.meta.env.VITE_MAPBOX_TOKEN
 /* -------------------------
    PREVIEW CITY
 ------------------------- */
@@ -128,6 +122,7 @@ const previewCity = (searchResult) => {
     },
   });
 };
+
 /* -------------------------
    SEARCH FUNCTION (DEBOUNCE)
 ------------------------- */
@@ -140,17 +135,26 @@ const getSearchResults = () => {
     if (searchQuery.value.trim() !== "") {
       try {
         const result = await axios.get(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchQuery.value}.json`,
+          "https://geocoding-api.open-meteo.com/v1/search",
           {
             params: {
-              access_token: mapboxAPIKey,
-              types: "place",
+              name: searchQuery.value,
+              count: 10,
+              language: "en",
+              format: "json",
             },
           }
         );
 
-        mapboxSearchResults.value = result.data.features;
+        mapboxSearchResults.value = (result.data.results || []).map((city) => ({
+          id: city.id,
+          place_name: `${city.name}, ${city.country}`,
+          geometry: {
+            coordinates: [city.longitude, city.latitude],
+          },
+        }));
       } catch (err) {
+        console.error(err);
         searchError.value = true;
         mapboxSearchResults.value = [];
       }
